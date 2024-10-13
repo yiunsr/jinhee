@@ -43,7 +43,7 @@
                 v-model="dialogData.userDialog"
                 :loading="dialogData.userDialogLoading"
                 density="compact" :hide-details="true" 
-                @keyup.alt.enter="userEnter" @keyup.meta.enter="userEnter"
+                @keyup.alt.enter="userEnter" @keyup.cmd.enter="userEnter"
                 />
             </v-col>
 
@@ -53,7 +53,7 @@
                   @click="userEnter">
                 입력<br/>
                 <template v-if="config.is_mac" >
-                  (Option + Enter)
+                  (cmd + Enter)
                 </template>
                 <template v-else>
                   (Alt + Enter)
@@ -140,10 +140,22 @@ const engine = new MLCEngine({
 });
 
 onMounted(async () => {
-  // Qwen2.5-0.5B-Instruct-q4f32_1-MLC"
-  // Qwen2.5-1.5B-Instruct-q4f32_1-MLC
+  // shader-f16 check
+  // https://developer.chrome.com/blog/new-in-webgpu-120 
+  const adapter = await navigator.gpu.requestAdapter();
+  const hasShaderF16 = adapter.features.has("shader-f16");
+
+  const header = hasShaderF16
+    ? `enable f16;
+      alias min16float = f16;`
+    : `alias min16float = f32;`;
+
+    
+  // "Qwen2.5-0.5B-Instruct-q4f16_1-MLC":"Qwen2.5-0.5B-Instruct-q4f32_1-MLC"
+  // "Qwen2.5-1.5B-Instruct-q4f16_1-MLC":"Qwen2.5-1.5B-Instruct-q4f32_1-MLC"
   // 
-  const selectedModel = "Qwen2.5-0.5B-Instruct-q4f32_1-MLC";
+  const selectedModel = hasShaderF16
+    ?"Qwen2.5-0.5B-Instruct-q4f16_1-MLC":"Qwen2.5-0.5B-Instruct-q4f32_1-MLC"
 
   await engine.reload(selectedModel);
 });
